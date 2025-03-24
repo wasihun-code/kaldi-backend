@@ -77,8 +77,7 @@ class Address(models.Model):
     user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='user_address', blank=True, null=True)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_address', blank=True, null=True)
 
-
-def __str__(self):
+    def __str__(self):
         return f'{self.city}, {self.state}, {self.country}'
 
 
@@ -86,7 +85,7 @@ class Wallet(models.Model):
     balance = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
     connected_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='user_wallet', blank=True, null=True)
-    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_~wallet', blank=True, null=True)
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_wallet', blank=True, null=True)
 
     def __str__(self):
         return f'Wallet of {self.user} - Balance: {self.balance}'

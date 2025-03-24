@@ -74,21 +74,29 @@ class Address(models.Model):
     state = models.CharField(max_length=20)
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=20)
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='user_address', blank=True, null=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='user_address', blank=True, null=True)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_address', blank=True, null=True)
 
     def __str__(self):
-        return f'{self.city}, {self.state}, {self.country}'
+        return (
+            f'Address ({'Vendor: ' + self.vendor.business_name if self.vendor else 'Customer: ' + self.customer.first_name + ' ' + self.customer.last_name})'
+            f'{self.city}, {self.state}, {self.country}'
+        )
 
 
 class Wallet(models.Model):
+    address = models.CharField(max_length=50)
     balance = models.DecimalField(max_digits=20, decimal_places=2, default=0.00)
     connected_at = models.DateTimeField(auto_now_add=True)
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='user_wallet', blank=True, null=True)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='user_wallet', blank=True, null=True)
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='vendor_wallet', blank=True, null=True)
 
     def __str__(self):
-        return f'Wallet of {self.user} - Balance: {self.balance}'
+        return (
+            f'Wallet ({'Vendor: ' + self.vendor.business_name if self.vendor else 'Customer: ' + self.customer.first_name + ' ' + self.customer.last_name})'
+            f'Address: {self.address}'
+            f'Balance: {self.balance}'
+        )
 
 
 class Item(models.Model):
@@ -98,17 +106,17 @@ class Item(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name='items')
 
     def __str__(self):
-        return f'{self.name} - ${self.price}'
+        return f'{self.name} - ${self.price} by Vendor {self.vendor.business_name}'
 
 
 class Inventory(models.Model):
-    item = models.OneToOneField(Item, on_delete=models.CASCADE, related_name='inventory')
-    in_stock = models.BooleanField(default=True)
     item_quantity = models.PositiveIntegerField()
+    in_stock = models.BooleanField(default=True)
     location = models.CharField(max_length=50)
+    item = models.OneToOneField(Item, on_delete=models.CASCADE, related_name='inventory')
 
     def __str__(self):
-        return f'{self.item.name} - {self.item_quantity} available'
+        return f'{self.item.name} - {self.item_quantity} available items'
 
 
 class Order(models.Model):
@@ -118,12 +126,15 @@ class Order(models.Model):
         ('delivered', 'Delivered'),
         ('cancelled', 'Cancelled'),
     ]
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders')
     status = models.CharField(choices=STATUS_CHOICES, max_length=10, default='pending')
     total = models.DecimalField(max_digits=10, decimal_places=2)
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='orders')
 
     def __str__(self):
-        return f'Order {self.id} - {self.status} - Total: ${self.total}'
+        return (
+            f'Order {self.id} - {self.status} - Total: ${self.total}'
+            f'by {self.customer.first_name} {self.customer.last_name}'
+        )
 
 
 class Transaction(models.Model):
@@ -134,11 +145,15 @@ class Transaction(models.Model):
     ]
     transaction_hash = models.CharField(unique=True, max_length=100)
     status = models.CharField(choices=TRANSACTION_STATUS_CHOICES, max_length=10, default='pending')
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='transactions')
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='transactions')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='transactions')
 
     def __str__(self):
-        return f'Transaction {self.transaction_hash} - {self.status}'
+        return (
+            f'Transaction {self.transaction_hash} - {self.status} '
+            f'on Order {self.order.id} '
+            f'by Customer {self.customer.first_name} {self.customer.last_name}'
+        )
 
 
 class Discount(models.Model):
@@ -152,13 +167,13 @@ class Discount(models.Model):
 
 
 class Cart(models.Model):
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='cart')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='cart_items')
     item_quantity = models.PositiveIntegerField()
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='cart')
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_discounts')
 
     def __str__(self):
-        return f'Cart of {self.user} - {self.item_quantity} x {self.item.name}'
+        return f'Cart of {self.customer} - {self.item_quantity} x {self.item.name}'
 
 
 class Bid(models.Model):
@@ -166,10 +181,14 @@ class Bid(models.Model):
         ('bidding', 'Bidding'),
         ('completed', 'Bidding Completed'),
     ]
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='bids')
-    user = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='bids')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(choices=STATUS_CHOICES, max_length=15, default='bidding')
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='bids')
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE, related_name='bids')
 
     def __str__(self):
-        return f'Bid on {self.item.name} by {self.user} - ${self.amount}'
+        return (
+            f'Bid of {self.amount} '
+            f'on {self.item.name} '
+            f'by {self.customer.first_name} {self.customer.last_name} - ${self.amount}'
+        )

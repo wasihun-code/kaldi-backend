@@ -2,3 +2,4 @@
 __pycache__/
 env/
 api/__pycache__/
+kaldiBackend/__pycache__/

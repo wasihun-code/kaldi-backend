@@ -1,7 +1,6 @@
 from django.contrib.auth.context_processors import auth
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-# Choice Constants
 
 
 class BaseUser(AbstractUser):

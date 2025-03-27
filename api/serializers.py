@@ -2,28 +2,14 @@ from rest_framework.serializers import ModelSerializer
 
 from api.models import (
     Address, Transaction, Order, Wallet,
-    Vendor, Inventory, Discount, Item,
-    Customer, Cart, Bid
+    Inventory, Discount, Item,
+    Cart, Bid, User
 )
 
 
-class CustomerSerializer(ModelSerializer):
+class UserSerializer(ModelSerializer):
     class Meta:
-        model = Customer
-        fields = [
-            "first_name",
-            "last_name",
-            "email",
-            "password",
-            "username",
-            "phone",
-            "profile_image",
-        ]
-
-
-class VendorSerializer(ModelSerializer):
-    class Meta:
-        model = Vendor
+        model = User
         fields = [
             "first_name",
             "last_name",
@@ -38,6 +24,7 @@ class VendorSerializer(ModelSerializer):
             "vendor_type",
             "business_license",
         ]
+
 
 
 class AddressSerializer(ModelSerializer):

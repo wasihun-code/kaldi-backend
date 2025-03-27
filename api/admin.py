@@ -1,10 +1,8 @@
 from django.contrib import admin
 from .models import (
-    Customer, Vendor, Address, Wallet, Cart, Discount, Inventory, Item, Order, Transaction,
+    User, Address, Wallet, Cart, Discount, Inventory, Item, Order, Transaction,
 )
-
-admin.site.register(Customer)
-admin.site.register(Vendor)
+admin.site.register(User)
 admin.site.register(Address)
 admin.site.register(Wallet)
 admin.site.register(Cart)

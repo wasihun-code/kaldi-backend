@@ -5,7 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api.views import (
     AddressViewSet, TransactionViewSet, OrderViewSet, WalletViewSet,
     InventoryViewSet, DiscountViewSet, ItemViewSet,
-    CartViewSet, BidViewSet, UserViewSet,
+    CartViewSet, BidViewSet, UserViewSet, get_user_details
 )
 
 
@@ -33,6 +33,6 @@ urlpatterns = [
 
     # api views
     path('/', include(router.urls), name='api'),
-
+    path('/user/detail', get_user_details, name='single_user')
     # auth views
 ]

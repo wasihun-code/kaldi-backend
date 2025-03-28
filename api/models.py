@@ -26,8 +26,8 @@ class User(AbstractUser):
     vendor_type = models.CharField(max_length=10, choices=[('individual', 'Individual'), ('business', 'Business')], default='individual')
     business_license = models.CharField(max_length=50, null=True, blank=True)
 
-    USERNAME_FIELD = 'email'  # Login with email instead of username
-    REQUIRED_FIELDS = ['username', 'phone', 'first_name', 'last_name']
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['username']
 
 
     def __str__(self):

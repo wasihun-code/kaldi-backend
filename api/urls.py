@@ -1,6 +1,11 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView, 
+    TokenRefreshView, 
+    TokenBlacklistView,
+)
 
 from api.views import (
     AddressViewSet, TransactionViewSet, OrderViewSet, WalletViewSet,
@@ -30,7 +35,8 @@ urlpatterns = [
     # simple_jwt auth views
     path('/token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
-
+    # blacklist token
+    path('/token/blacklist', TokenBlacklistView.as_view(), name='token_blacklist'),
     # api views
     path('/', include(router.urls), name='api'),
     path('/user/detail', get_user_details, name='single_user')

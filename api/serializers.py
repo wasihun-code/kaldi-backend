@@ -10,21 +10,8 @@ from api.models import (
 class UserSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = [
-            "first_name",
-            "last_name",
-            "email",
-            "password",
-            "username",
-            "phone",
-            "profile_image",
-            "business_name",
-            "rating",
-            "verification_status",
-            "vendor_type",
-            "business_license",
-        ]
-
+        fields = '__all__'
+        read_only_fields = ('id', 'is_active', 'is_staff', 'is_superuser')
 
 
 class AddressSerializer(ModelSerializer):

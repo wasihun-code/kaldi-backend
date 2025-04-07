@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from django.utils.timezone import now
-from api.models import User, Address, Wallet, Item, Inventory, Order, Transaction, Discount, Cart, Bid
+from api.models import User, Address, Wallet, Item, Inventory, Order, OrderItem, Transaction, Discount, Cart, Bid
 from decimal import Decimal
 import random
 
@@ -78,11 +78,24 @@ def create_inventory(items):
 def create_orders(customers, items):
     orders = []
     for customer in customers:
+        # First create the order
         order = Order.objects.create(
-            status='pending',
-            total=random.choice(items).price,
+            status=random.choice(['pending', 'shipped', 'delivered']),
             user=customer
         )
+        
+        # Then add 1-3 random items to the order
+        num_items = random.randint(1, 3)
+        selected_items = random.sample(items, num_items)
+        
+        for item in selected_items:
+            OrderItem.objects.create(
+                order=order,
+                item=item,
+                quantity=random.randint(1, 5),
+                price_at_purchase=item.price  # Store the price at time of purchase
+            )
+        
         orders.append(order)
     return orders
 
@@ -90,7 +103,7 @@ def create_transactions(orders):
     for order in orders:
         Transaction.objects.create(
             transaction_hash=f'tx{random.randint(10000, 99999)}',
-            status='pending',
+            status=random.choice(['pending', 'completed', 'failed']),
             order=order,
             user=order.user
         )
@@ -135,4 +148,4 @@ class Command(BaseCommand):
         create_discounts(vendors)
         create_carts(customers, items)
         create_bids(customers, items)
-        self.stdout.write(self.style.SUCCESS('Database successfully populated!'))
+        self.stdout.write(self.style.SUCCESS('Database successfully populated with OrderItems!'))

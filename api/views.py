@@ -16,7 +16,7 @@ from api.models import (
     User, Cart, Bid, OrderItem
 )
 
-from api.filters import OrderItemFilter
+from api.filters import OrderItemFilter, ItemFilters
 from django_filters.rest_framework import DjangoFilterBackend
 
 from api.serializers import (
@@ -55,12 +55,6 @@ class WalletViewSet(ModelViewSet):
     authentication_classes = [JWTAuthentication]
 
 
-class ItemViewSet(ModelViewSet):
-    queryset = Item.objects.all()
-    serializer_class = ItemSerializer
-    permission_classes = [IsAuthenticated, IsVendor]
-    authentication_classes = [JWTAuthentication]
-
 
 class InventoryViewSet(ModelViewSet):
     queryset = Inventory.objects.all()
@@ -69,6 +63,24 @@ class InventoryViewSet(ModelViewSet):
     authentication_classes = [JWTAuthentication]
 
 
+
+class ItemViewSet(ModelViewSet):
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = ItemFilters
+    
+    def get_queryset(self):
+        user = self.request.user
+        
+        if user.user_type == 'admin':
+            return Item.objects.all()
+        return Item.objects.filter(vendor=user)
+
+
+   
 class OrderViewSet(ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer

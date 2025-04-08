@@ -47,18 +47,19 @@ class WalletSerializer(ModelSerializer):
         fields = '__all__'
 
 
-
-class ItemSerializer(ModelSerializer):
-    class Meta:
-        model = Item
-        fields = '__all__'
-
-
-
 class InventorySerializer(ModelSerializer):
     class Meta:
         model = Inventory
         fields = '__all__'
+
+
+class ItemSerializer(ModelSerializer):
+    inventory = InventorySerializer()
+    class Meta:
+        model = Item
+        fields = ['id', 'name', 'description', 'price', 'vendor', 'inventory']
+
+
 
 
 

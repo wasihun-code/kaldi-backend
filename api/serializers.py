@@ -64,9 +64,33 @@ class InventorySerializer(ModelSerializer):
 
 class OrderItemSerializer(ModelSerializer):
     item = ItemSerializer(read_only=True)
+    purchaser = SerializerMethodField()
+    order = SerializerMethodField()
+    
+    def get_purchaser(self, obj):
+        purchaser = obj.order.user
+        
+        return {
+            'id': purchaser.id,
+            'first_name': purchaser.first_name,
+            'last_name': purchaser.last_name,
+            'email': purchaser.email,
+            'phone': purchaser.phone,
+        }
+        
+    def get_order(self, obj):
+        order = obj.order
+        
+        return {
+            'id': order.id,
+            'status': order.status,
+            'created_at': order.created_at,
+            'updated_at': order.updated_at,
+        }
+    
     class Meta:
         model = OrderItem
-        fields = ['id', 'item', 'quantity', 'price_at_purchase']
+        fields = ['id', 'item', 'quantity', 'price_at_purchase', 'order', 'purchaser']
 
 
 

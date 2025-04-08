@@ -16,6 +16,8 @@ from api.models import (
     User, Cart, Bid, OrderItem
 )
 
+from api.filters import OrderItemFilter
+from django_filters.rest_framework import DjangoFilterBackend
 
 from api.serializers import (
     AddressSerializer, OrderSerializer, TransactionSerializer, WalletSerializer,
@@ -79,18 +81,19 @@ class OrderItemViewSet(ModelViewSet):
     serializer_class = OrderItemSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = OrderItemFilter
     
-    
-    # def get_queryset(self):
-    #     user = self.request.user
-    #     if user.user_type == 'admin':
-    #         return OrderItem.objects.all()
-    #     elif user.user_type == 'vendor':
-    #         # Vendors can see order items for their own items
-    #         return OrderItem.objects.filter(item__vendor=user)
-    #     else:
-    #         # Customers can only see their own order items
-    #         return OrderItem.objects.filter(order__user=user)
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_type == 'admin':
+            return OrderItem.objects.all()
+        elif user.user_type == 'vendor':
+            # Vendors can see order items for their own items
+            return OrderItem.objects.filter(item__vendor=user).select_related('order', 'item', 'order__user')
+        else:
+            # Customers can only see their own order items
+            return OrderItem.objects.filter(order__user=user)
     
 class TransactionViewSet(ModelViewSet):
     queryset = Transaction.objects.all()

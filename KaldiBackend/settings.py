@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'api',
+    'django_filters',
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
@@ -50,7 +51,10 @@ AUTHENTICATION_BACKENDS = (
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ]
+    ], 
+    'DEFAULT_FILTER_BACKENDS': [  # Corrected from 'DJANGO_FILTER_BACKENDS'
+        'django_filters.rest_framework.DjangoFilterBackend',
+    ],
 }
 
 SIMPLE_JWT = {
@@ -77,6 +81,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'KaldiBackend.urls'
+
+
 
 TEMPLATES = [
     {

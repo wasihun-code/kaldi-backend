@@ -40,18 +40,21 @@ class User(AbstractUser):
         abstract = False
 
 
+
 class Address(models.Model):
     city = models.CharField(max_length=20)
     state = models.CharField(max_length=20)
     postal_code = models.CharField(max_length=10)
     country = models.CharField(max_length=20)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_address', blank=True, null=True)
+    street_address = models.CharField(max_length=100)
 
     def __str__(self):
         return (
             f'Address ({'Vendor: ' + self.vendor.business_name if self.vendor else 'Customer: ' + self.customer.first_name + ' ' + self.customer.last_name})'
             f'{self.city}, {self.state}, {self.country}'
         )
+
 
 
 class Wallet(models.Model):
@@ -68,14 +71,27 @@ class Wallet(models.Model):
         )
 
 
+
 class Item(models.Model):
+    CATEGORY_CHOICES = [
+        ('electronics', 'Electronics'),
+        ('clothing', 'Clothing'),
+        ('home', 'Home'),
+        ('books', 'Books'),
+        ('toys', 'Toys'),
+        ('sports', 'Sports'),
+        ('jewelry', 'Jewelry'),
+    ]
     name = models.CharField(max_length=50)
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2)
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='items')
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='electronics')  # Add this field
+    created_at = models.DateTimeField(auto_now_add=True)  # Add this field
 
     def __str__(self):
         return f'{self.name} - ${self.price} by Vendor {self.vendor.business_name}'
+
 
 
 class Inventory(models.Model):
@@ -83,9 +99,12 @@ class Inventory(models.Model):
     in_stock = models.BooleanField(default=True)
     location = models.CharField(max_length=50)
     item = models.OneToOneField(Item, on_delete=models.CASCADE, related_name='inventory')
+    last_restocked = models.DateTimeField(null=True, blank=True)  # Add this field
+
 
     def __str__(self):
         return f'{self.item.name} - {self.item_quantity} available items'
+
 
 
 class Order(models.Model):
@@ -108,6 +127,7 @@ class Order(models.Model):
         return f"Order #{self.id} - {self.status} by {self.user.email}"      
 
 
+
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='order_items')
     item = models.ForeignKey(Item, on_delete=models.PROTECT)
@@ -117,6 +137,7 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.item.name} in Order {self.order.id}"
     
+
 
 class Transaction(models.Model):
     TRANSACTION_STATUS_CHOICES = [
@@ -128,7 +149,9 @@ class Transaction(models.Model):
     status = models.CharField(choices=TRANSACTION_STATUS_CHOICES, max_length=10, default='pending')
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='transactions')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
-
+    created_at = models.DateField(auto_now_add=True)
+    updated_at = models.DateField(auto_now=True)
+    
     def __str__(self):
         return (
             f'Transaction {self.transaction_hash} - {self.status} '
@@ -137,14 +160,20 @@ class Transaction(models.Model):
         )
 
 
+
 class Discount(models.Model):
+    code = models.CharField(max_length=20, unique=True)
     description = models.CharField(max_length=50)
     percentage = models.DecimalField(max_digits=5, decimal_places=2)
     expires_at = models.DateField()
     vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='discounts')
+    created_at = models.DateTimeField(auto_now_add=True)  # Add this field
+    added_at = models.DateTimeField(auto_now_add=True)  # Add this field
+
 
     def __str__(self):
         return f'{self.percentage}% off by {self.vendor.business_name}'
+
 
 
 class Cart(models.Model):
@@ -152,9 +181,11 @@ class Cart(models.Model):
     item_quantity = models.PositiveIntegerField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cart')
     discount = models.ForeignKey(Discount, on_delete=models.SET_NULL, null=True, blank=True, related_name='cart_discounts')
-
+    added_at = models.DateTimeField(auto_now_add=True)
+    
     def __str__(self):
         return f'Cart of {self.customer} - {self.item_quantity} x {self.item.name}'
+
 
 
 class Bid(models.Model):
@@ -166,6 +197,7 @@ class Bid(models.Model):
     status = models.CharField(choices=STATUS_CHOICES, max_length=15, default='bidding')
     item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='bids')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bids')
+    created_at = models.DateTimeField(auto_now_add=True)  # Add this field
 
     def __str__(self):
         return (
@@ -173,3 +205,36 @@ class Bid(models.Model):
             f'on {self.item.name} '
             f'by {self.customer.first_name} {self.customer.last_name} - ${self.amount}'
         )
+
+
+
+class Notification(models.Model):
+    NOTIFICATION_CHOICES = [
+        ('system', 'System'),
+        ('general', 'General'),
+        ('product', 'Product'),
+        ('archived','Archived')
+    ]
+    type = models.CharField(choices=NOTIFICATION_CHOICES, default='general', max_length=15)
+    notified_at = models.DateTimeField(auto_now_add=True)
+    read = models.BooleanField()
+    text = models.TextField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')  # Add this field
+
+
+
+class Rating(models.Model):
+    rating = models.IntegerField()
+    review = models.TextField()
+    reviewed_at = models.DateTimeField(auto_now_add=True)
+    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+
+    def __str__(self):
+        return (
+            f'Rating {self.rating} for {self.item.name} '
+            f'by {self.customer.first_name} {self.customer.last_name}'
+            f'Review Text: {self.review}'
+        )
+
+

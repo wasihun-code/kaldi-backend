@@ -166,9 +166,9 @@ class Discount(models.Model):
     description = models.CharField(max_length=50)
     percentage = models.DecimalField(max_digits=5, decimal_places=2)
     expires_at = models.DateField()
-    vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='discounts')
     created_at = models.DateTimeField(auto_now_add=True)  # Add this field
     added_at = models.DateTimeField(auto_now_add=True)  # Add this field
+    vendor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='discounts')
 
 
     def __str__(self):

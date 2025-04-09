@@ -16,7 +16,7 @@ from api.models import (
     User, Cart, Bid, OrderItem, Notification
 )
 
-from api.filters import OrderItemFilter, ItemFilters, NotificationFilter
+from api.filters import OrderItemFilter, ItemFilters, NotificationFilter, DiscountFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
 from api.serializers import (
@@ -134,6 +134,16 @@ class DiscountViewSet(ModelViewSet):
     serializer_class = DiscountSerializer
     permission_classes = [IsAuthenticated, IsVendor]
     authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = DiscountFilter
+    
+    
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        
+        if user.user_type == 'admin':
+            return Discount.objects.all()
+        return Discount.objects.filter(vendor=user)
 
 
 class CartViewSet(ModelViewSet):

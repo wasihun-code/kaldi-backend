@@ -2,8 +2,10 @@ import django_filters
 from api.models import (
     Item, 
     OrderItem,
-    Notification
+    Discount,
+    Notification, 
 )
+from django.db.models import Q
 
 class OrderItemFilter(django_filters.FilterSet):
     """Filter by order status"""
@@ -30,6 +32,36 @@ class NotificationFilter(django_filters.FilterSet):
     class Meta:
         model = Notification
         fields = []
+
+
+
+class DiscountFilter(django_filters.FilterSet):
+    min_percentage = django_filters.NumberFilter(
+        field_name='percentage',
+        lookup_expr='gte',
+        label='Min Percentage'
+    )
+    
+    max_percentage = django_filters.NumberFilter(
+        field_name='percentage',
+        lookup_expr='lte',
+        label='Max Percentage'
+    )
+    
+    search = django_filters.CharFilter(
+        method='filter_by_search',
+        label='Search'
+    )
+    def filter_by_search(self, queryset, name, value):
+        return queryset.filter(
+            Q(code__icontains=value) |
+            Q(description__icontains=value)
+        )
+    
+    class Meta:
+        model = Discount
+        fields = []
+
 
 
 class ItemFilters(django_filters.FilterSet):

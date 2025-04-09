@@ -13,7 +13,7 @@ from api.views import (
     AddressViewSet, TransactionViewSet, OrderViewSet, WalletViewSet,
     InventoryViewSet, DiscountViewSet, ItemViewSet,
     CartViewSet, BidViewSet, UserViewSet, get_user_details,
-    VendorCustomerViewSet, OrderItemViewSet
+    VendorCustomerViewSet, OrderItemViewSet, NotificationViewSet
 )
 
 router = DefaultRouter()
@@ -24,11 +24,10 @@ router.register(prefix=r'transaction', viewset=TransactionViewSet, basename='tra
 router.register(prefix=r'order', viewset=OrderViewSet, basename='order')
 router.register(prefix=r'wallet', viewset=WalletViewSet, basename='wallet')
 
-
 router.register(prefix=r'inventory', viewset=InventoryViewSet, basename='inventory')
 router.register(prefix=r'discount', viewset=DiscountViewSet, basename='discount')
 router.register(prefix=r'item', viewset=ItemViewSet, basename='item')
-
+router.register(prefix='notification', viewset=NotificationViewSet, basename='notification')
 
 router.register(prefix=r'user', viewset=UserViewSet, basename='user')
 router.register(prefix=r'bid', viewset=BidViewSet, basename='bid')

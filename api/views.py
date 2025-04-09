@@ -13,16 +13,16 @@ from api.permissions import IsCustomer, IsVendor, IsAdminUser
 from api.models import (
     Address, Order, Transaction, Wallet,
     Inventory, Discount, Item,
-    User, Cart, Bid, OrderItem
+    User, Cart, Bid, OrderItem, Notification
 )
 
-from api.filters import OrderItemFilter, ItemFilters
+from api.filters import OrderItemFilter, ItemFilters, NotificationFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
 from api.serializers import (
     AddressSerializer, OrderSerializer, TransactionSerializer, WalletSerializer,
     InventorySerializer, DiscountSerializer, ItemSerializer,
-    UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, CustomerSerializer
+    UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, CustomerSerializer, NotificationSerializer
 )
 
 
@@ -54,6 +54,21 @@ class WalletViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
 
+
+class NotificationViewSet(ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = NotificationFilter
+    
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        if user.user_type == 'admin':
+            return Notification.objects.all()
+        else:
+            return Notification.objects.filter(user=user)
 
 
 class InventoryViewSet(ModelViewSet):

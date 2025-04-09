@@ -4,7 +4,7 @@ from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from api.models import (
     Address, Transaction, Order, Wallet,
     Inventory, Discount, Item,
-    Cart, Bid, User, OrderItem
+    Cart, Bid, User, OrderItem, Notification
 )
 
 
@@ -44,6 +44,12 @@ class AddressSerializer(ModelSerializer):
 class WalletSerializer(ModelSerializer):
     class Meta:
         model = Wallet
+        fields = '__all__'
+
+
+class NotificationSerializer(ModelSerializer):
+    class Meta:
+        model = Notification
         fields = '__all__'
 
 

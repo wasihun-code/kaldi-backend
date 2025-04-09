@@ -1,5 +1,9 @@
 import django_filters
-from api.models import (Item, OrderItem)
+from api.models import (
+    Item, 
+    OrderItem,
+    Notification
+)
 
 class OrderItemFilter(django_filters.FilterSet):
     """Filter by order status"""
@@ -10,6 +14,21 @@ class OrderItemFilter(django_filters.FilterSet):
 
     class Meta:
         model = OrderItem
+        fields = []
+        
+
+class NotificationFilter(django_filters.FilterSet):
+    type = django_filters.CharFilter(
+        field_name='type',
+        lookup_expr='iexact',
+        label='Type'
+    )
+    read = django_filters.BooleanFilter(
+        field_name='read',
+    )
+    
+    class Meta:
+        model = Notification
         fields = []
 
 

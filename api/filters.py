@@ -5,7 +5,8 @@ from api.models import (
     Discount,
     Notification, 
 )
-from django.db.models import Q
+from django.db.models import Q, F
+from datetime import datetime
 
 class OrderItemFilter(django_filters.FilterSet):
     """Filter by order status"""
@@ -52,10 +53,54 @@ class DiscountFilter(django_filters.FilterSet):
         method='filter_by_search',
         label='Search'
     )
+    
+    redemptions = django_filters.NumberFilter(
+        field_name='redemptions',
+        lookup_expr='gte',
+        label='Min Redemptions'
+    )
+    
+    max_redemptions = django_filters.NumberFilter(
+        field_name='max_redemptions',
+        lookup_expr='lte',
+        label='Max Redemptions'
+    )
+    
+    status = django_filters.CharFilter(
+        method='filter_by_status',
+        label='Status'
+    )
+        
+    def filter_by_status(self, queryset, name, value):
+        """
+        Filters discounts by status (active/inactive).
+        Active discounts:
+        - Have not passed their expiry date
+        - Have redemptions less than max_redemptions (if max_redemptions is set)
+        """
+        if value.lower() == 'active':
+            queryset = queryset.filter(
+                expires_at__gte=datetime.now()
+            )
+            # Only apply max_redemptions filter if max_redemptions is not None
+            queryset = queryset.filter(
+                Q(max_redemptions__isnull=True) |  # No limit on redemptions
+                Q(redemptions__lt=F('max_redemptions')) 
+            )# Under redemption limit
+        elif value.lower() == 'inactive':
+            queryset = queryset.filter(
+                Q(expires_at__lt=datetime.now()) |  # Past expiry date
+                Q(redemptions__gte=F('max_redemptions'), 
+                max_redemptions__isnull=False)  # Reached redemption limit
+            )
+        return queryset
+
+        
+    
     def filter_by_search(self, queryset, name, value):
         return queryset.filter(
             Q(code__icontains=value) |
-            Q(description__icontains=value)
+            Q(name=value)
         )
     
     class Meta:

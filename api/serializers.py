@@ -140,9 +140,10 @@ class RatingSerializer(ModelSerializer):
 
 
 class CartSerializer(ModelSerializer):
+    item = ItemSerializer()
     class Meta:
         model = Cart
-        fields = '__all__'
+        fields = ['id', 'item_quantity', 'discount', 'added_at', 'item']
 
 
 

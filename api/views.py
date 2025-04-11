@@ -16,7 +16,14 @@ from api.models import (
     User, Cart, Bid, OrderItem, Notification, Rating
 )
 
-from api.filters import OrderItemFilter, ItemFilters, NotificationFilter, DiscountFilter, RatingFilter
+from api.filters import (
+    CartFilters,
+    ItemFilters, 
+    RatingFilter,
+    DiscountFilter, 
+    OrderItemFilter, 
+    NotificationFilter, 
+)
 from django_filters.rest_framework import DjangoFilterBackend
 
 from api.serializers import (
@@ -168,6 +175,15 @@ class CartViewSet(ModelViewSet):
     serializer_class = CartSerializer
     permission_classes = [IsAuthenticated, IsCustomer]
     authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = CartFilters
+    
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        
+        if user.user_type == 'admin':
+            return Cart.objects.all()
+        return Cart.objects.filter(user=user)  
 
 
 class BidViewSet(ModelViewSet):

@@ -4,10 +4,12 @@ from api.models import (
     OrderItem,
     Discount,
     Notification, 
-    Rating
+    Rating,
+    Cart
 )
 from django.db.models import Q, F
-from datetime import datetime
+import datetime
+from django.utils import timezone
 
 class OrderItemFilter(django_filters.FilterSet):
     """Filter by order status"""
@@ -81,7 +83,7 @@ class DiscountFilter(django_filters.FilterSet):
         """
         if value.lower() == 'active':
             queryset = queryset.filter(
-                expires_at__gte=datetime.now()
+                expires_at__gte=datetime.datetime.now()
             )
             # Only apply max_redemptions filter if max_redemptions is not None
             queryset = queryset.filter(
@@ -90,7 +92,7 @@ class DiscountFilter(django_filters.FilterSet):
             )# Under redemption limit
         elif value.lower() == 'inactive':
             queryset = queryset.filter(
-                Q(expires_at__lt=datetime.now()) |  # Past expiry date
+                Q(expires_at__lt=datetime.datetime.now()) |  # Past expiry date
                 Q(redemptions__gte=F('max_redemptions'), 
                 max_redemptions__isnull=False)  # Reached redemption limit
             )
@@ -171,3 +173,62 @@ class ItemFilters(django_filters.FilterSet):
         fields = {
             'price': ['exact', 'lt', 'gt']
         }
+
+
+
+
+class CartFilters(django_filters.FilterSet):
+    min_price = django_filters.NumberFilter(
+        field_name='item__price',
+        lookup_expr='gte',
+        label='Min price'
+    )
+    
+    max_price = django_filters.NumberFilter(
+        field_name='item__price',
+        lookup_expr='lte',
+        label='Max price'
+    )
+    
+    # filter by item
+    name = django_filters.CharFilter(
+        field_name='item__name',
+        lookup_expr='icontains',
+        label='Item Name'
+    )
+    
+    date = django_filters.CharFilter(
+        method='filter_by_date',
+        label='Date Range'
+    )
+
+    # filter by date: last3months, thisyear, lastyear, last30days
+    def filter_by_date(self, queryset, name, value):
+        today = timezone.now().date()
+
+        if value == 'last15days':
+            start_date = today - datetime.timedelta(days=15)
+            return queryset.filter(added_at__gte=start_date)
+            
+        elif value == 'last3months':
+            start_date = today - datetime.timedelta(days=90)
+            return queryset.filter(added_at__gte=start_date)
+            
+        elif value == 'thisyear':
+            start_date = datetime.date(today.year, 1, 1)
+            return queryset.filter(added_at__gte=start_date)
+            
+        elif value == 'lastyear':
+            start_date = datetime.date(today.year-1, 1, 1)
+            end_date = datetime.date(today.year-1, 12, 31)
+            return queryset.filter(added_at__range=[start_date, end_date])
+            
+        elif value == 'thismonth':
+            start_date = datetime.date(today.year, today.month, 1)
+            return queryset.filter(added_at__gte=start_date)
+            
+        return queryset
+    
+    class Meta:
+        model = Cart
+        fields = []

@@ -4,6 +4,7 @@ from api.models import (
     OrderItem,
     Discount,
     Notification, 
+    Rating
 )
 from django.db.models import Q, F
 from datetime import datetime
@@ -107,6 +108,36 @@ class DiscountFilter(django_filters.FilterSet):
         model = Discount
         fields = []
 
+
+
+class RatingFilter(django_filters.FilterSet):
+    min_rating = django_filters.NumberFilter(
+        field_name='rating',
+        lookup_expr='gte',
+        label='Min rating'
+    )
+    
+    max_rating = django_filters.NumberFilter(
+        field_name='rating',
+        lookup_expr='lte',
+        label='Max rating'
+    )
+    
+    # filter by item
+    item = django_filters.CharFilter(
+        field_name='item__name',
+        lookup_expr='icontains',
+        label='Item Name'
+    )
+
+    user = django_filters.NumberFilter(
+        field_name='user__id',
+        label='User Id'
+    )
+
+    class Meta:
+        model = Rating
+        fields = []
 
 
 class ItemFilters(django_filters.FilterSet):

@@ -13,16 +13,17 @@ from api.permissions import IsCustomer, IsVendor, IsAdminUser
 from api.models import (
     Address, Order, Transaction, Wallet,
     Inventory, Discount, Item,
-    User, Cart, Bid, OrderItem, Notification
+    User, Cart, Bid, OrderItem, Notification, Rating
 )
 
-from api.filters import OrderItemFilter, ItemFilters, NotificationFilter, DiscountFilter
+from api.filters import OrderItemFilter, ItemFilters, NotificationFilter, DiscountFilter, RatingFilter
 from django_filters.rest_framework import DjangoFilterBackend
 
 from api.serializers import (
     AddressSerializer, OrderSerializer, TransactionSerializer, WalletSerializer,
     InventorySerializer, DiscountSerializer, ItemSerializer,
-    UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, CustomerSerializer, NotificationSerializer
+    UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, 
+    CustomerSerializer, NotificationSerializer, RatingSerializer
 )
 
 
@@ -146,6 +147,22 @@ class DiscountViewSet(ModelViewSet):
         return Discount.objects.filter(vendor=user)
 
 
+class RatingViewSet(ModelViewSet):
+    queryset = Rating.objects.all()
+    serializer_class = RatingSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = RatingFilter
+    
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        
+        if user.user_type == 'admin':
+            return Rating.objects.all()
+        return Rating.objects.filter(item__vendor=user)
+
+
 class CartViewSet(ModelViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
@@ -183,4 +200,3 @@ class VendorCustomerViewSet(ModelViewSet):
     
         
         
-    

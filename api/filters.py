@@ -1,13 +1,14 @@
 import django_filters
 from api.models import (
+    Cart,
     Item, 
-    OrderItem,
-    Discount,
-    Notification, 
+    Order,
     Rating,
-    Cart
+    Discount,
+    OrderItem,
+    Notification, 
 )
-from django.db.models import Q, F
+from django.db.models import Q, F, Sum
 import datetime
 from django.utils import timezone
 
@@ -231,4 +232,77 @@ class CartFilters(django_filters.FilterSet):
     
     class Meta:
         model = Cart
+        fields = []
+        
+        
+
+class OrderFilters(django_filters.FilterSet):
+    min_total = django_filters.NumberFilter(
+        method='filter_min_total',
+        label='Min total'
+    )
+    
+    max_total = django_filters.NumberFilter(
+        method='filter_max_total',
+        label='Max total'
+    )
+    
+    # filter by item
+    name = django_filters.CharFilter(
+        field_name='order_items__item__name',
+        lookup_expr='icontains',
+        label='Item Name'
+    )
+    
+    status = django_filters.CharFilter(
+        field_name='status',
+        lookup_expr='iexact',
+        label='Status'
+    )
+    
+    date = django_filters.CharFilter(
+        method='filter_by_date',
+        label='Date Range'
+    )
+    
+    def filter_min_total(self, queryset, name, value):
+        # Annotate each order with its total, then filter
+        return queryset.annotate(
+            order_total=Sum(F('order_items__price_at_purchase') * F('order_items__quantity'))
+        ).filter(order_total__gte=value)
+
+    def filter_max_total(self, queryset, name, value):
+        # Annotate each order with its total, then filter
+        return queryset.annotate(
+            order_total=Sum(F('order_items__price_at_purchase') * F('order_items__quantity'))
+        ).filter(order_total__lte=value)
+
+    def filter_by_date(self, queryset, name, value):
+        today = timezone.now().date()
+
+        if value == 'last15days':
+            start_date = today - datetime.timedelta(days=15)
+            return queryset.filter(created_at__gte=start_date)
+            
+        elif value == 'last3months':
+            start_date = today - datetime.timedelta(days=90)
+            return queryset.filter(created_at__gte=start_date)
+            
+        elif value == 'thisyear':
+            start_date = datetime.date(today.year, 1, 1)
+            return queryset.filter(created_at__gte=start_date)
+            
+        elif value == 'lastyear':
+            start_date = datetime.date(today.year-1, 1, 1)
+            end_date = datetime.date(today.year-1, 12, 31)
+            return queryset.filter(created_at__range=[start_date, end_date])
+            
+        elif value == 'thismonth':
+            start_date = datetime.date(today.year, today.month, 1)
+            return queryset.filter(created_at__gte=start_date)
+            
+        return queryset
+    
+    class Meta:
+        model = Order
         fields = []

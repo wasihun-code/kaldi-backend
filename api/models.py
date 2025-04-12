@@ -115,9 +115,9 @@ class Order(models.Model):
         ('cancelled', 'Cancelled'),
     ]
     status = models.CharField(choices=STATUS_CHOICES, max_length=10, default='pending')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='orders')
 
     @property
     def total(self):

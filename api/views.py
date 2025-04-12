@@ -20,6 +20,7 @@ from api.filters import (
     CartFilters,
     ItemFilters, 
     RatingFilter,
+    OrderFilters,
     DiscountFilter, 
     OrderItemFilter, 
     NotificationFilter, 
@@ -109,6 +110,15 @@ class OrderViewSet(ModelViewSet):
     serializer_class = OrderSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    filterset_class = OrderFilters
+    
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        
+        if user.user_type == 'admin':
+            return Order.objects.all()
+        return Order.objects.filter(user=user)
 
 
 class OrderItemViewSet(ModelViewSet):

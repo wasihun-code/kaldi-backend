@@ -22,7 +22,7 @@ class User(AbstractUser):
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
     user_type = models.CharField(choices=USER_CHOICES, max_length=10, default='customer')
 
-    business_name = models.CharField(max_length=50)
+    business_name = models.CharField(max_length=50, blank=True, null=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
     verification_status = models.CharField(choices=STATUS_CHOICES, max_length=15, default='unverified')
     vendor_type = models.CharField(max_length=10, choices=[('individual', 'Individual'), ('business', 'Business')], default='individual')
@@ -51,8 +51,9 @@ class Address(models.Model):
 
     def __str__(self):
         return (
-            f'Address ({'Vendor: ' + self.vendor.business_name if self.vendor else 'Customer: ' + self.customer.first_name + ' ' + self.customer.last_name})'
+            f'Address - {self.user.business_name if self.user.user_type == "vendor" else self.user.first_name + " " + self.user.last_name}, '
             f'{self.city}, {self.state}, {self.country}'
+            
         )
 
 
@@ -65,10 +66,11 @@ class Wallet(models.Model):
 
     def __str__(self):
         return (
-            f'Wallet ({'Vendor: ' + self.vendor.business_name if self.vendor else 'Customer: ' + self.customer.first_name + ' ' + self.customer.last_name})'
-            f'Address: {self.address}'
+            f'Wallet - {self.user.business_name if self.user.user_type == "vendor" else self.user.first_name + " " + self.user.last_name}, '
+            f'Address: {self.address}, '
             f'Balance: {self.balance}'
         )
+
 
 
 
@@ -91,7 +93,32 @@ class Item(models.Model):
 
     def __str__(self):
         return f'{self.name} - ${self.price} by Vendor {self.vendor.business_name}'
+    
 
+class UsedItem(models.Model):
+    CATEGORY_CHOICES = [
+        ('electronics', 'Electronics'),
+        ('clothing', 'Clothing'),
+        ('home', 'Home'),
+        ('books', 'Books'),
+        ('toys', 'Toys'),
+        ('sports', 'Sports'),
+        ('jewelry', 'Jewelry'),
+    ]
+    name = models.CharField(max_length=50)
+    description = models.TextField()
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    category = models.CharField(max_length=20, choices=Item.CATEGORY_CHOICES, default='electronics')
+    warranty_period = models.IntegerField() # in months
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='used_items')
+    
+    def __str__(self):
+        return (
+            f'Used Item Detail: '
+            f'{self.name} - ${self.price} - Warranty: {self.warranty_period} months'
+        )
 
 
 class Inventory(models.Model):
@@ -156,8 +183,9 @@ class Transaction(models.Model):
         return (
             f'Transaction {self.transaction_hash} - {self.status} '
             f'on Order {self.order.id} '
-            f'by Customer {self.customer.first_name} {self.customer.last_name}'
+            f'by User {self.user.first_name} {self.user.last_name}'
         )
+
 
 
 
@@ -166,7 +194,6 @@ class Discount(models.Model):
     name = models.CharField(max_length=50)
     percentage = models.DecimalField(max_digits=5, decimal_places=2)
     expires_at = models.DateField()
-    created_at = models.DateTimeField(auto_now_add=True)  # Add this field
     added_at = models.DateTimeField(auto_now_add=True)  # Add this field
     redemptions = models.IntegerField(default=0, null=True, blank=True)
     max_redemptions = models.IntegerField()
@@ -185,7 +212,8 @@ class Cart(models.Model):
     added_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
-        return f'Cart of {self.customer} - {self.item_quantity} x {self.item.name}'
+        return f'Cart of {self.user.first_name} - {self.item_quantity} x {self.item.name}'
+
 
 
 
@@ -196,16 +224,17 @@ class Bid(models.Model):
     ]
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(choices=STATUS_CHOICES, max_length=15, default='bidding')
-    item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name='bids')
+    created_at = models.DateTimeField(auto_now_add=True)  
+    used_item = models.ForeignKey(UsedItem, on_delete=models.CASCADE, related_name='bids')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bids')
-    created_at = models.DateTimeField(auto_now_add=True)  # Add this field
 
     def __str__(self):
         return (
             f'Bid of {self.amount} '
-            f'on {self.item.name} '
-            f'by {self.customer.first_name} {self.customer.last_name} - ${self.amount}'
+            f'on {self.used_item.name} '
+            f'by {self.user.first_name} {self.user.last_name} - ${self.amount}'
         )
+
 
 
 
@@ -222,6 +251,8 @@ class Notification(models.Model):
     text = models.TextField()
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')  # Add this field
 
+    def __str__(self):
+        return f'{self.type} notification for {self.user.first_name}: {self.text[:30]}...'
 
 
 class Rating(models.Model):
@@ -234,7 +265,7 @@ class Rating(models.Model):
     def __str__(self):
         return (
             f'Rating {self.rating} for {self.item.name} '
-            f'by {self.customer.first_name} {self.customer.last_name}'
+            f'by {self.user.first_name} {self.user.last_name} '
             f'Review Text: {self.review}'
         )
 

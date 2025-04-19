@@ -4,7 +4,7 @@ from rest_framework.serializers import ModelSerializer, SerializerMethodField
 from api.models import (
     Address, Transaction, Order, Wallet,
     Inventory, Discount, Item,
-    Cart, Bid, User, OrderItem, Notification, Rating
+    Cart, Bid, User, OrderItem, Notification, Rating, UsedItem
 )
 
 
@@ -66,6 +66,10 @@ class ItemSerializer(ModelSerializer):
         fields = ['id', 'name', 'description', 'price', 'vendor', 'inventory']
 
 
+class UsedItemSerializer(ModelSerializer):
+    class Meta:
+        model = UsedItem
+        fields = '__all__'
 
 
 

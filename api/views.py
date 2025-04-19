@@ -12,7 +12,7 @@ from api.permissions import IsCustomer, IsVendor, IsAdminUser
 
 from api.models import (
     Address, Order, Transaction, Wallet,
-    Inventory, Discount, Item,
+    Inventory, Discount, Item, UsedItem,
     User, Cart, Bid, OrderItem, Notification, Rating
 )
 
@@ -31,7 +31,7 @@ from api.serializers import (
     AddressSerializer, OrderSerializer, TransactionSerializer, WalletSerializer,
     InventorySerializer, DiscountSerializer, ItemSerializer,
     UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, 
-    CustomerSerializer, NotificationSerializer, RatingSerializer
+    CustomerSerializer, NotificationSerializer, RatingSerializer, UsedItemSerializer
 )
 
 
@@ -103,6 +103,15 @@ class ItemViewSet(ModelViewSet):
             return Item.objects.all()
         return Item.objects.filter(vendor=user)
 
+
+class UsedItemViewSet(ModelViewSet):
+    queryset = UsedItem.objects.all()
+    serializer_class = UsedItemSerializer
+    permission_classes = [IsAuthenticated, IsVendor]
+    authentication_classes = [JWTAuthentication]
+    filter_backends = [DjangoFilterBackend]
+    # filterset_class = ItemFilters
+    
 
    
 class OrderViewSet(ModelViewSet):
@@ -201,6 +210,13 @@ class BidViewSet(ModelViewSet):
     serializer_class = BidSerializer
     permission_classes = [IsAuthenticated, IsCustomer]
     authentication_classes = [JWTAuthentication]
+    
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        
+        if user.user_type == 'admin':
+            return Bid.objects.all()
+        return Bid.objects.filter(user=user)
 
 
 class VendorCustomerViewSet(ModelViewSet):

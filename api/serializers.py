@@ -1,4 +1,4 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField
+from rest_framework.serializers import ModelSerializer, SerializerMethodField, HiddenField, CurrentUserDefault
 
 
 from api.models import (
@@ -152,6 +152,10 @@ class CartSerializer(ModelSerializer):
 
 
 class BidSerializer(ModelSerializer):
+    user = CustomerSerializer(read_only=True)
+    
     class Meta:
         model = Bid
-        fields = '__all__'
+        fields = ['id', 'amount', 'status', 'user', 'used_item', 'created_at']
+        raed_only_fields = ['id', 'created_at', 'user']
+        

@@ -113,6 +113,17 @@ class UsedItemViewSet(ModelViewSet):
     # filterset_class = ItemFilters
     
 
+    def perform_create(self, serializer):
+        # Automatically set the user to the current user
+        serializer.save(user=self.request.user)
+
+    def perform_update(self, serializer):
+        # Automatically set the user to the current user
+        serializer.save(user=self.request.user)
+        
+    def perform_destroy(self, instance):
+        # Automatically set the user to the current user
+        instance.delete()
    
 class OrderViewSet(ModelViewSet):
     queryset = Order.objects.all()
@@ -213,11 +224,20 @@ class BidViewSet(ModelViewSet):
     
     def get_queryset(self, *args, **kwargs):
         user = self.request.user
-        
-        if user.user_type == 'admin':
-            return Bid.objects.all()
-        return Bid.objects.filter(user=user)
+        item_id = self.request.query_params.get('item_id', None)
 
+        if user.user_type == 'admin':
+            if item_id:
+                return Bid.objects.filter(used_item=item_id)
+            return Bid.objects.all()
+        
+        queryset = Bid.objects.all()
+        if item_id:
+            queryset = queryset.filter(used_item=item_id)
+        return queryset
+
+
+        
 
 class VendorCustomerViewSet(ModelViewSet):
     queryset = User.objects.all()

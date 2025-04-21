@@ -8,6 +8,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework.decorators import api_view, permission_classes
 from api.permissions import IsCustomer, IsVendor, IsAdminUser
+from rest_framework import status
+from django.contrib.auth import get_user_model
+from api.serializers import UserSerializer
+
 
 
 from api.models import (
@@ -262,3 +266,149 @@ class VendorCustomerViewSet(ModelViewSet):
     
         
         
+# api/views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+import hashlib
+import hmac
+import os
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class TelegramLoginView(APIView):
+    def post(self, request):
+        data = request.data
+        
+        # 1. Verify Telegram data
+        if not self.verify_telegram_data(data):
+            return Response(
+                {"error": "Invalid Telegram authentication"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # 2. Get or create user
+        user = self.get_or_create_user(data)
+        
+        # 3. Generate auth token (using your existing token mechanism)
+        token = your_token_generation_method(user)
+        
+        return Response({
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "user_type": user.user_type
+            },
+            "token": token
+        })
+    
+    def verify_telegram_data(self, data):
+        bot_token = os.getenv('TELEGRAM_BOT_TOKEN')
+        secret_key = hashlib.sha256(bot_token.encode()).digest()
+        
+        check_string = "\n".join(
+            f"{key}={data[key]}" 
+            for key in sorted(data.keys()) 
+            if key != "hash"
+        )
+        
+        computed_hash = hmac.new(
+            secret_key, 
+            check_string.encode(), 
+            hashlib.sha256
+        ).hexdigest()
+        
+        return computed_hash == data.get('hash')
+    
+    def get_or_create_user(self, data):
+        # Try to find existing user by Telegram ID
+        user = User.objects.filter(telegram_id=data['id']).first()
+        
+        if not user:
+            # Create new user
+            username = data.get('username') or f"tg_{data['id']}"
+            user = User.objects.create(
+                telegram_id=data['id'],
+                username=username,
+                first_name=data.get('first_name', ''),
+                last_name=data.get('last_name', ''),
+                user_type='customer'  # Default type, adjust as needed
+            )
+        
+        return user
+    
+
+User = get_user_model()
+class RegistrationView(APIView):
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            # Set default values
+            serializer.validated_data['verification_status'] = 'verified'
+            
+            # Handle vendor-specific fields
+            if serializer.validated_data.get('user_type') == 'vendor':
+                serializer.validated_data['vendor_type'] = 'individual'
+            else:
+                serializer.validated_data['vendor_type'] = None
+                serializer.validated_data['business_name'] = ''
+                serializer.validated_data['business_license'] = ''
+            
+            user = serializer.save()
+            
+            return Response({
+                "message": "Registration successful. You can now login.",
+                "user": UserSerializer(user).data
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    
+# api/views.py
+class TelegramRegisterView(APIView):
+    def post(self, request):
+        data = request.data
+        
+        # Verify required fields
+        if not data.get('telegram_id'):
+            return Response(
+                {"error": "Telegram ID is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # Generate a unique username if not provided
+        username = data.get('username', f"tg_{data['telegram_id']}")
+        
+        # Create user data
+        user_data = {
+            'telegram_id': data['telegram_id'],
+            'username': username,
+            'email': data.get('email', f"{data['telegram_id']}@telegram.temp"),
+            'first_name': data.get('first_name', ''),
+            'last_name': data.get('last_name', ''),
+            'password': make_password(str(uuid.uuid4())),  # Random password
+            'user_type': data.get('user_type', 'customer'),
+            'vendor_type': data.get('vendor_type'),
+            'business_name': data.get('business_name', ''),
+            'verification_status': 'verified',
+            'phone': data.get('phone', '')
+        }
+        
+        serializer = UserSerializer(data=user_data)
+        
+        if serializer.is_valid():
+            user = serializer.save()
+            
+            # Generate token
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                "user": UserSerializer(user).data,
+                "access": str(refresh.access_token),
+                "refresh": str(refresh)
+            }, status=status.HTTP_201_CREATED)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

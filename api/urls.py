@@ -13,7 +13,8 @@ from api.views import (
     AddressViewSet, TransactionViewSet, OrderViewSet, WalletViewSet,
     InventoryViewSet, DiscountViewSet, ItemViewSet, UsedItemViewSet,
     CartViewSet, BidViewSet, UserViewSet, get_user_details,
-    VendorCustomerViewSet, OrderItemViewSet, NotificationViewSet, RatingViewSet
+    VendorCustomerViewSet, OrderItemViewSet, NotificationViewSet, RatingViewSet,
+    TelegramLoginView, RegistrationView, TelegramRegisterView
 )
 
 router = DefaultRouter()
@@ -42,6 +43,10 @@ urlpatterns = [
     path('/token', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('/token/refresh', TokenRefreshView.as_view(), name='token_refresh'),
     path('/token/blacklist', TokenBlacklistView.as_view(), name='token_blacklist'),
+    
+    # Telegram Login
+    path('/telegram-login/', TelegramLoginView.as_view(), name='telegram-login'),
+    path('telegram-register/', TelegramRegisterView.as_view(), name='telegram-register'),   
 
     # api views
     path('/', include(router.urls), name='api'),
@@ -50,4 +55,6 @@ urlpatterns = [
     path('/vendor/customer', VendorCustomerViewSet.as_view({
         'get' : 'list'
     }), name='vendor_customer'),
+    
+    path('/register/', RegistrationView.as_view(), name='register'),
 ]

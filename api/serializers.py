@@ -1,18 +1,47 @@
-from rest_framework.serializers import ModelSerializer, SerializerMethodField, HiddenField, CurrentUserDefault
-
-
+from rest_framework.serializers import (
+    ModelSerializer, SerializerMethodField
+)
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
 from api.models import (
     Address, Transaction, Order, Wallet,
     Inventory, Discount, Item,
     Cart, Bid, User, OrderItem, Notification, Rating, UsedItem
 )
+from rest_framework import serializers
 
 
+User = get_user_model()
 
 class UserSerializer(ModelSerializer):
+    password = serializers.CharField(write_only=True)
+    confirm_password = serializers.CharField(write_only=True, required=False)
+    
     class Meta:
         model = User
-        fields = '__all__'
+        fields = [
+            'id', 'username', 'email', 'password', 'confirm_password',
+            'first_name', 'last_name', 'phone', 'user_type', 'vendor_type',
+            'business_name', 'business_license', 'telegram_id'
+        ]
+        extra_kwargs = {
+            'password': {'write_only': True},
+            'telegram_id': {'required': False}
+        }
+    
+    def validate(self, data):
+        if 'password' in data and 'confirm_password' in data:
+            if data['password'] != data['confirm_password']:
+                raise ValidationError("Passwords do not match")
+        return data
+    
+    def create(self, validated_data):
+        validated_data.pop('confirm_password', None)
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
+        return user
 
 
 

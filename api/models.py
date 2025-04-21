@@ -17,6 +17,7 @@ class User(AbstractUser):
         ('unverified', 'Unverified'),
     ]
 
+    telegram_id = models.BigIntegerField(null=True, blank=True, unique=True)
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=20)
     profile_image = models.ImageField(upload_to='profile_images/', null=True, blank=True)
@@ -25,7 +26,13 @@ class User(AbstractUser):
     business_name = models.CharField(max_length=50, blank=True, null=True)
     rating = models.DecimalField(max_digits=3, decimal_places=2, default=0.0)
     verification_status = models.CharField(choices=STATUS_CHOICES, max_length=15, default='unverified')
-    vendor_type = models.CharField(max_length=10, choices=[('individual', 'Individual'), ('business', 'Business')], default='individual')
+    vendor_type = models.CharField(
+        max_length=10,
+        choices=[('individual', 'Individual'), ('business', 'Business')], 
+        default='individual',
+        null=True, 
+        blank=True
+    )
     business_license = models.CharField(max_length=50, null=True, blank=True)
 
     USERNAME_FIELD = 'email'

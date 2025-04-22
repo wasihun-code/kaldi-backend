@@ -36,7 +36,7 @@ from api.serializers import (
     InventorySerializer, DiscountSerializer, ItemSerializer,
     UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, 
     CustomerSerializer, NotificationSerializer, RatingSerializer, UsedItemSerializer, 
-    CartCreateSerializer
+    CartCreateSerializer, CreateOrderItemSerializer
 )
 
 
@@ -60,6 +60,13 @@ class AddressViewSet(ModelViewSet):
     serializer_class = AddressSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+    
+    def get_queryset(self, *args, **kwargs):
+        user = self.request.user
+        
+        if user.user_type == 'admin':
+            return Address.objects.all()
+        return Address.objects.filter(user=user)  
 
 
 class WalletViewSet(ModelViewSet):
@@ -132,6 +139,7 @@ class UsedItemViewSet(ModelViewSet):
         # Automatically set the user to the current user
         instance.delete()
    
+
 class OrderViewSet(ModelViewSet):
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
@@ -166,6 +174,11 @@ class OrderItemViewSet(ModelViewSet):
         else:
             # Customers can only see their own order items
             return OrderItem.objects.filter(order__user=user)
+        
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return CreateOrderItemSerializer
+        return OrderItemSerializer
     
 class TransactionViewSet(ModelViewSet):
     queryset = Transaction.objects.all()

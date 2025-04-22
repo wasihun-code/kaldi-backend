@@ -133,6 +133,17 @@ class OrderItemSerializer(ModelSerializer):
         fields = ['id', 'item', 'quantity', 'price_at_purchase', 'order', 'purchaser']
 
 
+class CreateOrderItemSerializer(ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'price_at_purchase', 'quantity', 'order', 'item']
+        
+    def validate_item(self, value):
+        # Ensure the item exists
+        if not Item.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("Item does not exist")
+        return value
+
 
 class OrderSerializer(ModelSerializer):
     order_items = OrderItemSerializer(many=True, read_only=True)
@@ -143,7 +154,7 @@ class OrderSerializer(ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'status', 'user', 'created_at', 'updated_at', 'order_items', 'total']
+        fields = ['id', 'status', 'user', 'created_at', 'order_items', 'total']
 
 
 

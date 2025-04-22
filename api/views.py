@@ -35,7 +35,8 @@ from api.serializers import (
     AddressSerializer, OrderSerializer, TransactionSerializer, WalletSerializer,
     InventorySerializer, DiscountSerializer, ItemSerializer,
     UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, 
-    CustomerSerializer, NotificationSerializer, RatingSerializer, UsedItemSerializer
+    CustomerSerializer, NotificationSerializer, RatingSerializer, UsedItemSerializer, 
+    CartCreateSerializer
 )
 
 
@@ -95,7 +96,7 @@ class InventoryViewSet(ModelViewSet):
 class ItemViewSet(ModelViewSet):
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
-    permission_classes = [IsAuthenticated, IsVendor]
+    permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ItemFilters
@@ -104,6 +105,8 @@ class ItemViewSet(ModelViewSet):
         user = self.request.user
         
         if user.user_type == 'admin':
+            return Item.objects.all()
+        elif user.user_type == 'customer':
             return Item.objects.all()
         return Item.objects.filter(vendor=user)
 
@@ -174,7 +177,7 @@ class TransactionViewSet(ModelViewSet):
 class DiscountViewSet(ModelViewSet):
     queryset = Discount.objects.all()
     serializer_class = DiscountSerializer
-    permission_classes = [IsAuthenticated, IsVendor]
+    permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     filter_backends = [DjangoFilterBackend]
     filterset_class = DiscountFilter
@@ -212,12 +215,22 @@ class CartViewSet(ModelViewSet):
     filter_backends = [DjangoFilterBackend]
     filterset_class = CartFilters
     
+     
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return CartCreateSerializer
+        return CartSerializer
+    
     def get_queryset(self, *args, **kwargs):
         user = self.request.user
         
         if user.user_type == 'admin':
             return Cart.objects.all()
         return Cart.objects.filter(user=user)  
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
 
 
 class BidViewSet(ModelViewSet):

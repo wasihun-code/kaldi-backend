@@ -178,7 +178,16 @@ class CartSerializer(ModelSerializer):
         model = Cart
         fields = ['id', 'item_quantity', 'discount', 'added_at', 'item']
 
-
+class CartCreateSerializer(ModelSerializer):
+    class Meta:
+        model = Cart
+        fields = ['id', 'item', 'item_quantity', 'discount']
+        
+    def validate_item(self, value):
+        # Ensure the item exists
+        if not Item.objects.filter(id=value.id).exists():
+            raise serializers.ValidationError("Item does not exist")
+        return value
 
 class BidSerializer(ModelSerializer):
     user = CustomerSerializer(read_only=True)

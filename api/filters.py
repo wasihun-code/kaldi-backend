@@ -7,6 +7,7 @@ from api.models import (
     Discount,
     OrderItem,
     Notification, 
+    UsedItem,
 )
 from django.db.models import Q, F, Sum
 import datetime
@@ -181,6 +182,33 @@ class ItemFilters(django_filters.FilterSet):
 
 
 
+class UsedItemFilters(django_filters.FilterSet):
+    """ Filter Used Items by price, name and category """
+    min_price = django_filters.NumberFilter(
+        field_name='price', 
+        lookup_expr='gte',
+        label='Minimum Price'
+    )
+    max_price = django_filters.NumberFilter(
+        field_name='price', 
+        lookup_expr='lte',
+        label='Maximum Price'
+    )
+    name = django_filters.CharFilter(
+        field_name='name',
+        lookup_expr='icontains',
+        label='Name'
+    )
+    category = django_filters.CharFilter(method='filter_search')
+    
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(category__iexact=value)
+    
+    class Meta:
+        model = UsedItem
+        fields = {
+            'price': ['exact', 'lt', 'gt']
+        }
 
 class CartFilters(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(

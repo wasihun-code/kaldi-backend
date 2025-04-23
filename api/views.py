@@ -28,6 +28,7 @@ from api.filters import (
     DiscountFilter, 
     OrderItemFilter, 
     NotificationFilter, 
+    UsedItemFilters
 )
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -124,7 +125,7 @@ class UsedItemViewSet(ModelViewSet):
     permission_classes = [IsAuthenticated, IsVendor]
     authentication_classes = [JWTAuthentication]
     filter_backends = [DjangoFilterBackend]
-    # filterset_class = ItemFilters
+    filterset_class = UsedItemFilters
     
 
     def perform_create(self, serializer):

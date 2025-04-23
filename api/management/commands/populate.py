@@ -89,11 +89,11 @@ class Command(BaseCommand):
         try:
             # Create users in separate transactions
             admin = self.create_admin()
-            delivery_users = self.create_delivery_personnel(3)
-            customers = self.create_customers(25)
+            delivery_user = self.create_delivery_personnel(1)[0]
+            customers = self.create_customers(10)
             vendors = self.create_vendors(8)
             
-            all_users = customers + vendors + delivery_users + [admin]
+            all_users = customers + vendors + [delivery_user] + [admin]
             
             # Create addresses and wallets in batches
             self.create_addresses_in_batches(all_users)
@@ -150,20 +150,21 @@ class Command(BaseCommand):
         for i in range(count):
             try:
                 with transaction.atomic():
-                    username = fake.user_name()
+                    first_name = fake.first_name()
+                    last_name = fake.last_name()
+                    username = f'delivery_{first_name.lower()}'
                     self.stdout.write(f"Creating delivery person {i+1}/{count}: {username}")
                     
                     user = User.objects.create_user(
                         username=username,
-                        email=fake.email(),
+                        email=f'delivery.{first_name.lower()}@marketplace.com',
                         phone=fake.phone_number(),
-                        first_name=fake.first_name(),
-                        last_name=fake.last_name(),
+                        first_name=first_name,
+                        last_name=last_name,
                         user_type='delivery',
                         password='delivery123',
                         verification_status='verified',
-                        business_name=f"{fake.first_name()}'s Delivery Service",  # Add business name
-
+                        business_name=f"{first_name}'s Delivery Service",
                     )
                     user.set_password('delivery123')
                     user.save()
@@ -175,20 +176,17 @@ class Command(BaseCommand):
 
     def create_customers(self, count):
         customers = []
-        # Create customers in batches of 5
-        batch_size = 5
-        for batch in range(0, count, batch_size):
-            batch_customers = []
-            for i in range(batch, min(batch + batch_size, count)):
-                try:
+        for i in range(count):
+            try:
+                with transaction.atomic():
                     first_name = fake.first_name()
                     last_name = fake.last_name()
-                    email = f"{first_name.lower()}.{last_name.lower()}@example.com"
-                    username = f"{first_name.lower()}{random.randint(1, 9999)}"
+                    email = f"{first_name.lower()}.{last_name.lower()}@customer.com"
+                    username = f"{first_name.lower()}{last_name.lower()[:3]}{random.randint(1, 99)}"
                     
                     self.stdout.write(f"Creating customer {i+1}/{count}: {username}")
                     
-                    user = User(
+                    user = User.objects.create_user(
                         username=username,
                         email=email,
                         phone=fake.phone_number(),
@@ -200,27 +198,15 @@ class Command(BaseCommand):
                             weights=[0.7, 0.2, 0.1],
                             k=1
                         )[0],
-                        business_name=None,  # Explicitly set to None for customers
+                        business_name=None,
                         profile_image=None if random.random() < 0.7 else f'profile_images/user_{uuid.uuid4().hex[:8]}.jpg'
                     )
-                    batch_customers.append(user)
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'Error preparing customer: {e}'))
-                    continue
-            
-            # Bulk create the batch of customers
-            try:
-                with transaction.atomic():
-                    User.objects.bulk_create(batch_customers)
-                    # We need to set passwords separately as bulk_create doesn't call save()
-                    for username in [user.username for user in batch_customers]:
-                        user = User.objects.get(username=username)
-                        user.set_password('customer123')
-                        user.save()
-                        customers.append(user)
+                    user.set_password('customer123')
+                    user.save()
+                    customers.append(user)
             except IntegrityError as e:
-                self.stdout.write(self.style.WARNING(f'Error creating batch of customers: {e}'))
-        
+                self.stdout.write(self.style.WARNING(f'Skipping duplicate customer: {e}'))
+                continue
         return customers
 
     def create_vendors(self, count):
@@ -324,7 +310,7 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f'Error creating wallet batch: {e}'))
 
-    def create_items_in_batches(self, vendors, batch_size=10):
+    def create_items_in_batches(self, vendors, batch_size=5):
         items = []
         all_items_data = []
         
@@ -334,8 +320,10 @@ class Command(BaseCommand):
         for vendor in vendors:
             # Choose a random category
             category = random.choice(list(PRODUCTS.keys()))
-            # Select 3 random products from that category
-            products = random.sample(PRODUCTS[category], min(3, len(PRODUCTS[category])))
+            # Create 1-10 items for this vendor
+            num_items = random.randint(1, 10)
+            # Select random products from that category
+            products = random.sample(PRODUCTS[category], min(num_items, len(PRODUCTS[category])))
             
             for name, description, price in products:
                 all_items_data.append({
@@ -370,7 +358,7 @@ class Command(BaseCommand):
         
         return items
 
-    def create_used_items_in_batches(self, customers, batch_size=10):
+    def create_used_items_in_batches(self, customers, batch_size=5):
         used_items = []
         all_used_items_data = []
         
@@ -378,11 +366,12 @@ class Command(BaseCommand):
         
         # Prepare all used item data first
         for customer in customers:
+            # Each customer has 1-3 used items
+            num_items = random.randint(1, 3)
             # Choose a random category
             category = random.choice(list(PRODUCTS.keys()))
-            # Select 1-3 random products from that category
-            num_products = random.randint(1, 3)
-            products = random.sample(PRODUCTS[category], min(num_products, len(PRODUCTS[category])))
+            # Select random products from that category
+            products = random.sample(PRODUCTS[category], min(num_items, len(PRODUCTS[category])))
             
             for name, description, price in products:
                 # Adjust price for used items (50-80% of original price)
@@ -390,7 +379,7 @@ class Command(BaseCommand):
                 
                 all_used_items_data.append({
                     'name': f"Used {name}",
-                    'description': f"Pre-owned {description}",
+                    'description': f"Pre-owned {description}. In good condition with minor signs of wear.",
                     'price': used_price.quantize(Decimal('0.00')),
                     'category': category,
                     'warranty_period': random.randint(1, 12),  # 1-12 months warranty
@@ -430,10 +419,14 @@ class Command(BaseCommand):
             inventories = []
             
             for item in batch_items:
+                # 70% chance of being in stock, 30% out of stock
+                in_stock = random.random() < 0.7
+                item_quantity = random.randint(1, 50) if in_stock else 0
+                
                 inventories.append(Inventory(
                     item=item,
-                    item_quantity=random.randint(1, 50),
-                    in_stock=random.random() < 0.8,  # 80% chance of being in stock
+                    item_quantity=item_quantity,
+                    in_stock=in_stock,
                     location=random.choice(['Warehouse A', 'Warehouse B', 'Store']),
                     last_restocked=now() - timedelta(days=random.randint(0, 30))
                 ))
@@ -449,12 +442,13 @@ class Command(BaseCommand):
         orders = []
         self.stdout.write("Creating orders in batches...")
         
-        for i in range(0, len(customers), batch_size):
-            batch_customers = customers[i:i+batch_size]
-            
-            for customer in batch_customers:
-                try:
-                    with transaction.atomic():
+        for customer in customers:
+            try:
+                with transaction.atomic():
+                    # Each customer has 1-3 orders
+                    num_orders = random.randint(1, 3)
+                    
+                    for _ in range(num_orders):
                         # Create the order
                         order = Order.objects.create(
                             status=random.choice(['pending', 'shipped', 'delivered']),
@@ -478,10 +472,8 @@ class Command(BaseCommand):
                             OrderItem.objects.bulk_create(order_items)
                         
                         orders.append(order)
-                except Exception as e:
-                    self.stdout.write(self.style.WARNING(f'Error creating order for customer {customer.id}: {e}'))
-            
-            self.stdout.write(f"Created orders for customers batch {i//batch_size + 1}")
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f'Error creating order for customer {customer.id}: {e}'))
         
         return orders
 
@@ -523,7 +515,9 @@ class Command(BaseCommand):
         for vendor in vendors:
             try:
                 with transaction.atomic():
-                    for i in range(random.randint(1, 3)):
+                    # Each vendor has 1-3 unique discounts
+                    num_discounts = random.randint(1, 3)
+                    for i in range(num_discounts):
                         code, desc, base_percent, base_redemptions = random.choice(discount_types)
                         discount_code = f"{code}{random.randint(10, 99)}"
                         
@@ -531,7 +525,7 @@ class Command(BaseCommand):
                         
                         discount = Discount.objects.create(
                             code=discount_code,
-                            name=desc,
+                            name=f"{vendor.business_name} {desc}",
                             percentage=Decimal(base_percent * random.uniform(0.8, 1.2)).quantize(Decimal('1')),
                             expires_at=now().date() + timedelta(days=random.randint(7, 60)),
                             vendor=vendor,
@@ -554,42 +548,43 @@ class Command(BaseCommand):
             self.stdout.write(self.style.WARNING('No items in stock to create carts'))
             return
 
-        # 60% of customers have carts with 1-4 items
-        customers_with_carts = random.sample(customers, k=int(len(customers) * 0.6))
-        
-        for i in range(0, len(customers_with_carts), batch_size):
-            batch_customers = customers_with_carts[i:i+batch_size]
-            cart_items = []
-            
-            for customer in batch_customers:
-                num_items = random.randint(1, min(4, len(in_stock_items)))
-                selected_items = random.sample(in_stock_items, num_items)
-                
-                for item in selected_items:
-                    cart_items.append(Cart(
-                        item=item,
-                        item_quantity=random.randint(1, 3),
-                        user=customer,
-                        discount=random.choice(discounts) if random.random() < 0.2 and discounts else None,
-                        added_at=now() - timedelta(days=random.randint(0, 30))
-                    ))
-            
+        for customer in customers:
             try:
                 with transaction.atomic():
+                    # Each customer has 1 cart with 1-10 items
+                    num_items = random.randint(1, min(10, len(in_stock_items)))
+                    selected_items = random.sample(in_stock_items, num_items)
+                    
+                    cart_items = []
+                    for item in selected_items:
+                        cart_items.append(Cart(
+                            item=item,
+                            item_quantity=random.randint(1, 3),
+                            user=customer,
+                            discount=random.choice(discounts) if random.random() < 0.2 and discounts else None,
+                            added_at=now() - timedelta(days=random.randint(0, 30))
+                        ))
+                    
                     Cart.objects.bulk_create(cart_items)
-                    self.stdout.write(f"Created {len(cart_items)} cart items (batch {i//batch_size + 1})")
             except Exception as e:
-                self.stdout.write(self.style.WARNING(f'Error creating cart batch: {e}'))
+                self.stdout.write(self.style.WARNING(f'Error creating cart for customer {customer.id}: {e}'))
 
     def create_bids_in_batches(self, customers, used_items, batch_size=20):
-        # 30% of used items have bids from 3-8 customers
-        bid_items = random.sample(used_items, k=int(len(used_items) * 0.3))
         all_bids = []
         
         self.stdout.write("Creating bids...")
         
-        for used_item in bid_items:
-            bidders = random.sample(customers, k=min(random.randint(3, 8), len(customers)))
+        for used_item in used_items:
+            # Get potential bidders (all customers except the owner)
+            potential_bidders = [c for c in customers if c != used_item.user]
+            
+            if not potential_bidders:
+                continue
+                
+            # Each used item gets 1-3 bids from different customers
+            num_bids = random.randint(1, 3)
+            bidders = random.sample(potential_bidders, min(num_bids, len(potential_bidders)))
+            
             for bidder in bidders:
                 all_bids.append({
                     'amount': used_item.price * Decimal(random.uniform(0.8, 1.5)).quantize(Decimal('0.00')),
@@ -638,7 +633,9 @@ class Command(BaseCommand):
         self.stdout.write("Creating notifications...")
         
         for user in users:
-            for _ in range(random.randint(3, 10)):
+            # Each user gets 1-3 notifications
+            num_notifications = random.randint(1, 3)
+            for _ in range(num_notifications):
                 all_notifications.append({
                     'type': random.choice(notification_types),
                     'read': random.random() < 0.7,
@@ -667,17 +664,17 @@ class Command(BaseCommand):
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f'Error creating notification batch: {e}'))
 
-
     def create_ratings_in_batches(self, customers, items, batch_size=20):
-    # 70% of items have 1-5 ratings
-        rated_items = random.sample(items, k=int(len(items) * 0.7))
         all_ratings = []
         
         self.stdout.write("Creating ratings in batches...")
         
-        for item in rated_items:
-            reviewers = random.sample(customers, k=min(random.randint(1, 5), len(customers)))
-            for reviewer in reviewers:
+        for customer in customers:
+            # Each customer rates 3-4 random items
+            num_ratings = random.randint(3, 4)
+            rated_items = random.sample(list(items), min(num_ratings, len(items)))
+            
+            for item in rated_items:
                 rating_value = random.choices(
                     [1, 2, 3, 4, 5],
                     weights=[0.05, 0.1, 0.15, 0.3, 0.4],
@@ -688,7 +685,7 @@ class Command(BaseCommand):
                     'rating': rating_value,
                     'review': fake.paragraph(nb_sentences=2) if random.random() < 0.8 else '',
                     'item': item,
-                    'user': reviewer,
+                    'user': customer,
                     'reviewed_at': now() - timedelta(days=random.randint(0, 180))
                 })
         
@@ -711,4 +708,3 @@ class Command(BaseCommand):
                     self.stdout.write(f"Created {len(batch_ratings)} ratings (batch {i//batch_size + 1})")
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f'Error creating rating batch: {e}'))
-        

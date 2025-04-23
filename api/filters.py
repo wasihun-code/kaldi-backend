@@ -168,6 +168,10 @@ class ItemFilters(django_filters.FilterSet):
         lookup_expr='icontains',
         label='Location'
     )
+    category = django_filters.CharFilter(method='filter_search')
+    
+    def filter_search(self, queryset, name, value):
+        return queryset.filter(category__iexact=value)
     
     class Meta:
         model = Item

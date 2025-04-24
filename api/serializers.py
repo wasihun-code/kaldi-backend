@@ -166,6 +166,13 @@ class ItemSerializer(ModelSerializer):
         fields = ['id', 'name', 'description', 'price', 'category', 'inventory', 'created_at', 'vendor']
 
 
+class CreateItemSerializer(ModelSerializer):
+    class Meta:
+        model = Item
+        fields = ['id', 'name', 'description', 'price', 'category', 'vendor']
+        
+    
+
 class UsedItemSerializer(ModelSerializer):
     class Meta:
         model = UsedItem

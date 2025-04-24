@@ -48,7 +48,8 @@ class OrderItemFilter(django_filters.FilterSet):
     class Meta:
         model = OrderItem
         fields = ['status', 'min_price', 'max_price', 'category', 'user', 'search']
-        
+        import django_filters
+
 
 class NotificationFilter(django_filters.FilterSet):
     type = django_filters.CharFilter(
@@ -59,11 +60,22 @@ class NotificationFilter(django_filters.FilterSet):
     read = django_filters.BooleanFilter(
         field_name='read',
     )
-    
+    # Additional filter for notification text search
+    search = django_filters.CharFilter(
+        field_name='text',
+        lookup_expr='icontains',
+        label='Search'
+    )
+    # Optional: filter for notified date (exact date filtering)
+    date = django_filters.DateFilter(
+        field_name='notified_at',
+        lookup_expr='date',
+        label='Notified Date'
+    )
+
     class Meta:
         model = Notification
-        fields = []
-
+        fields = ['type', 'read', 'search', 'date']
 
 
 class DiscountFilter(django_filters.FilterSet):

@@ -37,7 +37,7 @@ from api.serializers import (
     InventorySerializer, DiscountSerializer, ItemSerializer,
     UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, 
     CustomerSerializer, NotificationSerializer, RatingSerializer, UsedItemSerializer, 
-    CartCreateSerializer, CreateOrderItemSerializer, UserUpdateSerializer, AddressUpdateSerializer
+    CartCreateSerializer, CreateOrderItemSerializer, UserUpdateSerializer, AddressUpdateSerializer, CreateItemSerializer
 )
 
 
@@ -135,6 +135,12 @@ class ItemViewSet(ModelViewSet):
     authentication_classes = [JWTAuthentication]
     filter_backends = [DjangoFilterBackend]
     filterset_class = ItemFilters
+    
+    def get_serializer_class(self):
+        print(self.request.data)
+        if self.action in ['create', 'update', 'partial_update']:
+            return CreateItemSerializer
+        return ItemSerializer
     
     def get_queryset(self):
         user = self.request.user

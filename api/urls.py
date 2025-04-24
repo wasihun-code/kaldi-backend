@@ -30,6 +30,7 @@ router.register(r'cart', CartViewSet, basename='cart')
 router.register(r'order-items', OrderItemViewSet, basename='order-item')
 router.register(r'used-items', UsedItemViewSet, basename='used-item')
 
+
 urlpatterns = [
     # api views
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

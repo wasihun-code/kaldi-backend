@@ -14,15 +14,40 @@ import datetime
 from django.utils import timezone
 
 class OrderItemFilter(django_filters.FilterSet):
-    """Filter by order status"""
     status = django_filters.CharFilter(
         field_name='order__status',
         lookup_expr='iexact',
+        label='Status'
     )
-
+    min_price = django_filters.NumberFilter(
+        field_name='price_at_purchase',
+        lookup_expr='gte',
+        label='Min Price'
+    )
+    max_price = django_filters.NumberFilter(
+        field_name='price_at_purchase',
+        lookup_expr='lte',
+        label='Max Price'
+    )
+    category = django_filters.CharFilter(
+        field_name='item__category',
+        lookup_expr='iexact',
+        label='Category'
+    )
+    user = django_filters.NumberFilter(
+        field_name='order__user__id',
+        label='User'
+    )
+    search = django_filters.CharFilter(
+        field_name='item__name',
+        lookup_expr='icontains',
+        label='Item Search'
+    )
+    
+   
     class Meta:
         model = OrderItem
-        fields = []
+        fields = ['status', 'min_price', 'max_price', 'category', 'user', 'search']
         
 
 class NotificationFilter(django_filters.FilterSet):

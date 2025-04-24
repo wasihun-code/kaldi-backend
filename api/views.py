@@ -37,38 +37,65 @@ from api.serializers import (
     InventorySerializer, DiscountSerializer, ItemSerializer,
     UserSerializer, CartSerializer, BidSerializer, OrderItemSerializer, 
     CustomerSerializer, NotificationSerializer, RatingSerializer, UsedItemSerializer, 
-    CartCreateSerializer, CreateOrderItemSerializer
+    CartCreateSerializer, CreateOrderItemSerializer, UserUpdateSerializer, AddressUpdateSerializer
 )
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_details(request):
+    # get the user and its address
     user = request.user
-    serializer = UserSerializer(user)
-    return Response(serializer.data)
+    user_serializer = UserSerializer(user)
+    addresses = user.user_address.all()
+    # print(addresses) # user_address = related_name from Address model
+    address_serializer = AddressSerializer(addresses, many=True)
 
+    return Response({
+        'user': user_serializer.data,
+        'addresses': address_serializer.data
+    })
 
 class UserViewSet(ModelViewSet):
     queryset = User.objects.all()
-    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
+    
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            return UserUpdateSerializer
+        return UserSerializer 
+    
+    def get_queryset(self):
+        user = self.request.user
+        if user.user_type == 'admin':
+            return User.objects.all()
+        return User.objects.filter(id=user.id)  # Users can only see their own profile
+
+    def perform_update(self, serializer):
+        # Any additional logic before saving
+        serializer.save()
 
 
 class AddressViewSet(ModelViewSet):
     queryset = Address.objects.all()
-    serializer_class = AddressSerializer
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
     
-    def get_queryset(self, *args, **kwargs):
+    def get_serializer_class(self):
+        if self.action in ['update', 'partial_update']:
+            return AddressUpdateSerializer
+        return AddressSerializer  
+    
+    def get_queryset(self):
         user = self.request.user
-        
         if user.user_type == 'admin':
             return Address.objects.all()
-        return Address.objects.filter(user=user)  
+        return Address.objects.filter(user=user)  # Users can only see their own addresses
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+        
 
 class WalletViewSet(ModelViewSet):
     queryset = Wallet.objects.all()

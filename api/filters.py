@@ -29,7 +29,7 @@ class NotificationFilter(django_filters.FilterSet):
     type = django_filters.CharFilter(
         field_name='type',
         lookup_expr='iexact',
-        label='Type'
+        label='Type',
     )
     read = django_filters.BooleanFilter(
         field_name='read',
@@ -45,35 +45,35 @@ class DiscountFilter(django_filters.FilterSet):
     min_percentage = django_filters.NumberFilter(
         field_name='percentage',
         lookup_expr='gte',
-        label='Min Percentage'
+        label='Min Percentage',
     )
     
     max_percentage = django_filters.NumberFilter(
         field_name='percentage',
         lookup_expr='lte',
-        label='Max Percentage'
+        label='Max Percentage',
     )
     
     search = django_filters.CharFilter(
         method='filter_by_search',
-        label='Search'
+        label='Search',
     )
     
     redemptions = django_filters.NumberFilter(
         field_name='redemptions',
         lookup_expr='gte',
-        label='Min Redemptions'
+        label='Min Redemptions',
     )
     
     max_redemptions = django_filters.NumberFilter(
         field_name='max_redemptions',
         lookup_expr='lte',
-        label='Max Redemptions'
+        label='Max Redemptions',
     )
     
     status = django_filters.CharFilter(
         method='filter_by_status',
-        label='Status'
+        label='Status',
     )
         
     def filter_by_status(self, queryset, name, value):
@@ -118,25 +118,25 @@ class RatingFilter(django_filters.FilterSet):
     min_rating = django_filters.NumberFilter(
         field_name='rating',
         lookup_expr='gte',
-        label='Min rating'
+        label='Min rating',
     )
     
     max_rating = django_filters.NumberFilter(
         field_name='rating',
         lookup_expr='lte',
-        label='Max rating'
+        label='Max rating',
     )
     
     # filter by item
     item = django_filters.CharFilter(
         field_name='item__name',
         lookup_expr='icontains',
-        label='Item Name'
+        label='Item Name',
     )
 
     user = django_filters.NumberFilter(
         field_name='user__id',
-        label='User Id'
+        label='User Id',
     )
 
     class Meta:
@@ -152,22 +152,22 @@ class ItemFilters(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(
         field_name='price', 
         lookup_expr='gte',
-        label='Minimum Price'
+        label='Minimum Price',
     )
     max_price = django_filters.NumberFilter(
         field_name='price', 
         lookup_expr='lte',
-        label='Maximum Price'
+        label='Maximum Price',
     )
     name = django_filters.CharFilter(
         field_name='name',
         lookup_expr='icontains',
-        label='Name'
+        label='Name',
     )
     location = django_filters.CharFilter(
         field_name='inventory__location',
         lookup_expr='icontains',
-        label='Location'
+        label='Location',
     )
     category = django_filters.CharFilter(method='filter_search')
     
@@ -187,17 +187,17 @@ class UsedItemFilters(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(
         field_name='price', 
         lookup_expr='gte',
-        label='Minimum Price'
+        label='Minimum Price',
     )
     max_price = django_filters.NumberFilter(
         field_name='price', 
         lookup_expr='lte',
-        label='Maximum Price'
+        label='Maximum Price',
     )
     name = django_filters.CharFilter(
         field_name='name',
         lookup_expr='icontains',
-        label='Name'
+        label='Name',
     )
     category = django_filters.CharFilter(method='filter_search')
     
@@ -214,25 +214,25 @@ class CartFilters(django_filters.FilterSet):
     min_price = django_filters.NumberFilter(
         field_name='item__price',
         lookup_expr='gte',
-        label='Min price'
+        label='Min price',
     )
     
     max_price = django_filters.NumberFilter(
         field_name='item__price',
         lookup_expr='lte',
-        label='Max price'
+        label='Max price',
     )
     
     # filter by item
     name = django_filters.CharFilter(
         field_name='item__name',
         lookup_expr='icontains',
-        label='Item Name'
-    )
+        label='Item Name',
+)
     
     date = django_filters.CharFilter(
         method='filter_by_date',
-        label='Date Range'
+        label='Date Range',
     )
 
     # filter by date: last3months, thisyear, lastyear, last30days
@@ -271,30 +271,30 @@ class CartFilters(django_filters.FilterSet):
 class OrderFilters(django_filters.FilterSet):
     min_total = django_filters.NumberFilter(
         method='filter_min_total',
-        label='Min total'
+        label='Min total',
     )
     
     max_total = django_filters.NumberFilter(
         method='filter_max_total',
-        label='Max total'
+        label='Max total',
     )
     
     # filter by item
     name = django_filters.CharFilter(
         field_name='order_items__item__name',
         lookup_expr='icontains',
-        label='Item Name'
+        label='Item Name',
     )
     
     status = django_filters.CharFilter(
         field_name='status',
         lookup_expr='iexact',
-        label='Status'
+        label='Status',
     )
     
     date = django_filters.CharFilter(
         method='filter_by_date',
-        label='Date Range'
+        label='Date Range',
     )
     
     def filter_min_total(self, queryset, name, value):

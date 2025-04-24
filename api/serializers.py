@@ -9,7 +9,8 @@ from api.models import (
     Cart, Bid, User, OrderItem, Notification, Rating, UsedItem
 )
 from rest_framework import serializers
-
+from django.core.exceptions import ValidationError
+from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
 
@@ -22,7 +23,7 @@ class UserSerializer(ModelSerializer):
         fields = [
             'id', 'username', 'email', 'password', 'confirm_password',
             'first_name', 'last_name', 'phone', 'user_type', 'vendor_type',
-            'business_name', 'business_license', 'telegram_id'
+            'business_name', 'business_license', 'telegram_id', 'profile_image'
         ]
         extra_kwargs = {
             'password': {'write_only': True},
@@ -50,7 +51,7 @@ class VendorSerializer(ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'phone', 
-            'business_name', 'vendor_type', 'bussiness_license' 
+            'business_name', 'vendor_type', 'bussiness_license', 'profile_image'
         ]
 
 
@@ -58,7 +59,7 @@ class VendorSerializer(ModelSerializer):
 class CustomerSerializer(ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone', 'profile_image']
         # read_only_fields = ('id')        
 
 
@@ -68,6 +69,76 @@ class AddressSerializer(ModelSerializer):
         model = Address
         fields = '__all__'
 
+
+
+User = get_user_model()
+
+class UserUpdateSerializer(ModelSerializer):
+    email = serializers.EmailField(
+        required=False,
+        validators=[UniqueValidator(queryset=User.objects.all())]
+    )
+    
+    class Meta:
+        model = User
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 'phone',
+            'vendor_type', 'business_name', 'business_license',
+            'telegram_id', 'profile_image'
+        ]
+        extra_kwargs = {
+            'username': {'required': False},
+            'email': {'required': False},
+            'telegram_id': {'required': False},
+            'profile_image': {'required': False}
+        }
+    
+    def validate(self, data):
+        # Validate vendor-specific fields when user is a vendor
+        if self.instance and self.instance.user_type == 'vendor':
+            if 'business_name' in data and not data['business_name']:
+                raise serializers.ValidationError("Business name is required for vendors")
+            if 'vendor_type' in data and not data['vendor_type']:
+                raise serializers.ValidationError("Vendor type is required for vendors")
+        
+        # Prevent changing user_type through update
+        if 'user_type' in data and self.instance and data['user_type'] != self.instance.user_type:
+            raise serializers.ValidationError("Cannot change user type after creation")
+        
+        return data
+    
+    def update(self, instance, validated_data):
+        # Handle profile image separately
+        profile_image = validated_data.pop('profile_image', None)
+        
+        # Update all other fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        
+        if profile_image:
+            instance.profile_image = profile_image
+        
+        instance.save()
+        return instance
+
+class AddressUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Address
+        fields = ['id', 'street_address', 'city', 'state', 'postal_code', 'country']
+        extra_kwargs = {
+            'street_address': {'required': False},
+            'city': {'required': False},
+            'state': {'required': False},
+            'postal_code': {'required': False},
+            'country': {'required': False}
+        }
+    
+    def update(self, instance, validated_data):
+        # Update address fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class WalletSerializer(ModelSerializer):
@@ -92,7 +163,7 @@ class ItemSerializer(ModelSerializer):
     inventory = InventorySerializer()
     class Meta:
         model = Item
-        fields = ['id', 'name', 'description', 'price', 'vendor', 'inventory']
+        fields = ['id', 'name', 'description', 'price', 'category', 'inventory', 'created_at', 'vendor']
 
 
 class UsedItemSerializer(ModelSerializer):
@@ -188,6 +259,7 @@ class CartSerializer(ModelSerializer):
     class Meta:
         model = Cart
         fields = ['id', 'item_quantity', 'discount', 'added_at', 'item']
+
 
 class CartCreateSerializer(ModelSerializer):
     class Meta:

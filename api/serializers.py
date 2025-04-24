@@ -214,7 +214,7 @@ class OrderItemSerializer(ModelSerializer):
 class CreateOrderItemSerializer(ModelSerializer):
     class Meta:
         model = OrderItem
-        fields = ['id', 'price_at_purchase', 'quantity', 'order', 'item']
+        fields = ['id', 'price_at_purchase', 'quantity', 'order', 'item', 'image']
         
     def validate_item(self, value):
         # Ensure the item exists

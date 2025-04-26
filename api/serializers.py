@@ -163,7 +163,7 @@ class ItemSerializer(ModelSerializer):
     inventory = InventorySerializer()
     class Meta:
         model = Item
-        fields = ['id', 'name', 'description', 'price', 'category', 'inventory', 'created_at', 'vendor']
+        fields = ['id', 'name', 'description', 'price', 'category', 'inventory', 'created_at', 'vendor', 'image']
 
 
 class CreateItemSerializer(ModelSerializer):
@@ -187,6 +187,7 @@ class OrderItemSerializer(ModelSerializer):
     
     def get_purchaser(self, obj):
         purchaser = obj.order.user
+
         
         return {
             'id': purchaser.id,

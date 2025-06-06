@@ -171,17 +171,24 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # settings.py
 
 # CORS Settings (Place near top of settings)
-CORS_ALLOW_ALL_ORIGINS = True  # For development only
+# CORS_ALLOW_ALL_ORIGINS = True  # For development only
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "https://kaldi-frontend.vercel.app",
 ]
+from corsheaders.defaults import default_headers
+
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    'access-control-allow-origin',
+    'access-control-allow-credentials',
+]
+CORS_URLS_REGEX = r'^/.*$'
 
 CSRF_TRUSTED_ORIGINS = [
-     "http://localhost:3000",
-     "http://127.0.0.1:3000",
-    "https://fine-picked-man.ngrok-free.app"
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "https://kaldi-frontend.vercel.app",
 ]
 
 

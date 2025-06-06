@@ -27,7 +27,9 @@ SECRET_KEY = 'django-insecure-+6820b#m7^10-2l+a085g^u8i$!u_)dg*2ytdfw938b)3nzusz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'https://kaldi-backend.onrender.com'
+]
 
 
 INSTALLED_APPS = [

@@ -137,7 +137,7 @@ class ItemViewSet(ModelViewSet):
     filterset_class = ItemFilters
     
     def get_serializer_class(self):
-        print(self.request.data)
+        # print(self.request.data)
         if self.action in ['create', 'update', 'partial_update']:
             return CreateItemSerializer
         return ItemSerializer

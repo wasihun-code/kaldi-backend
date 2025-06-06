@@ -25,10 +25,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-+6820b#m7^10-2l+a085g^u8i$!u_)dg*2ytdfw938b)3nzusz'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# DEBUG = True
 
 ALLOWED_HOSTS = [
-    'kaldi-backend.onrender.com'
+    'kaldi-backend.onrender.com',
+    '127.0.0.1',
+    'localhost',
 ]
 
 

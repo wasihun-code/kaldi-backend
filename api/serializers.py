@@ -29,6 +29,13 @@ class UserSerializer(ModelSerializer):
             'password': {'write_only': True},
             'telegram_id': {'required': False}
         }
+        
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            url = request.build_absolute_uri(obj.image.url)
+            return url.replace("http://", "https://")  # Force HTTPS
+        return None
     
     def validate(self, data):
         if 'password' in data and 'confirm_password' in data:
@@ -164,7 +171,13 @@ class ItemSerializer(ModelSerializer):
     class Meta:
         model = Item
         fields = ['id', 'name', 'description', 'price', 'category', 'inventory', 'created_at', 'vendor', 'image']
-
+        
+    def get_image(self, obj):
+        request = self.context.get('request')
+        if obj.image and hasattr(obj.image, 'url'):
+            url = request.build_absolute_uri(obj.image.url)
+            return url.replace("http://", "https://")  # Force HTTPS
+        return None
 
 class CreateItemSerializer(ModelSerializer):
     class Meta:

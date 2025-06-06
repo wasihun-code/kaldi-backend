@@ -166,7 +166,7 @@ CORS_ALLOW_ALL_ORIGINS = True  # For development only
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://fine-picked-man.ngrok-free.app"
+    "https://kaldi-frontend.vercel.app",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
